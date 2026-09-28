@@ -1,20 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { blogService } from '@/lib/services';
+import { BlogPost, BlogCategory } from '@/lib/types';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export default function BlogPage() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [activeCategoryId, setActiveCategoryId] = useState('all');
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
 
-  const categories = t.blogPage.categories || [];
-  const posts = t.blogPage.posts || [];
+  useEffect(() => {
+    blogService.getBlogCategories(lang).then(setCategories);
+  }, [lang]);
 
-  const filteredPosts = activeCategoryId === 'all'
-    ? posts
-    : posts.filter(p => p.categoryId === activeCategoryId);
+  useEffect(() => {
+    let isCancelled = false;
+    blogService
+      .getBlogPosts({ locale: lang as any, categoryId: activeCategoryId })
+      .then((data) => {
+        if (!isCancelled) {
+          setPosts(data);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [lang, activeCategoryId]);
+
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -55,9 +72,10 @@ export default function BlogPage() {
 
           {/* Articles Grid */}
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPosts.map((post) => (
+            {posts.map((post) => (
               <article
                 key={post.slug}
+
                 className="flex flex-col overflow-hidden rounded-box border border-ink/10 bg-surface-card shadow-sm transition duration-300 hover:border-brand-navy/30 hover:shadow-lg group"
               >
                 {/* Cover Image */}

@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dataRepo } from '@/lib/data';
+import { leadService } from '@/lib/services';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!body.fullName || !body.workEmail || !body.company) {
-      return NextResponse.json(
-        { success: false, message: 'Please provide full name, work email, and company.' },
-        { status: 400 }
-      );
-    }
+    const result = await leadService.submitLead(body);
 
-    const result = await dataRepo.submitLead(body);
+    if (!result.success) {
+      return NextResponse.json(result, { status: 400 });
+    }
 
     return NextResponse.json(result, { status: 200 });
   } catch (err: any) {
@@ -23,3 +20,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

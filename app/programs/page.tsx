@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { programService } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export default function ProgramsPage() {
@@ -12,17 +13,14 @@ export default function ProgramsPage() {
   const [evidence, setEvidence] = useState('');
   const [result, setResult] = useState<string | null>(null);
 
-  const handleDiagnostic = () => {
-    if (audience === 'corporate') {
-      setResult(t.programsPage.diagnosticResults.corporate);
-    } else if (audience === 'investor-policy') {
-      setResult(t.programsPage.diagnosticResults.investorPolicy);
-    } else if (audience === 'university') {
-      setResult(t.programsPage.diagnosticResults.university);
-    } else {
-      setResult(t.programsPage.diagnosticResults.industry);
-    }
+  const handleDiagnostic = async () => {
+    const recommendation = await programService.getDiagnosticRecommendation(
+      { decision, audience, timing, evidence },
+      t.programsPage.diagnosticResults
+    );
+    setResult(recommendation);
   };
+
 
   const isFormComplete = decision && audience && timing && evidence;
 

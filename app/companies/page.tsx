@@ -1,42 +1,43 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { COMPANIES_DATA } from '@/lib/data/companies';
+import { companyService } from '@/lib/services';
+import { CompanyHost, CompanyTagFilter } from '@/lib/types';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { SearchInput, Badge, Button } from '@/components/ui';
 
 export default function CompaniesPage() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [selectedTag, setSelectedTag] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [companies, setCompanies] = useState<CompanyHost[]>([]);
+  const [tagFilters, setTagFilters] = useState<CompanyTagFilter[]>([]);
 
-  const tagFilters = t.companiesPage.tagFilters || [
-    { id: 'All', label: 'All Sectors' },
-    { id: 'Foundation Models', label: 'Foundation Models' },
-    { id: 'Robotics & Hardware', label: 'Robotics & Hardware' },
-    { id: 'Autonomous Mobility', label: 'Autonomous Mobility' },
-    { id: 'Cloud & Platforms', label: 'Cloud & Platforms' },
-    { id: 'Enterprise AI', label: 'Enterprise AI' },
-    { id: 'Fintech', label: 'Fintech' },
-  ];
+  useEffect(() => {
+    companyService.getFilterTags(lang).then(setTagFilters);
+  }, [lang]);
 
-  const filteredCompanies = useMemo(() => {
-    return COMPANIES_DATA.filter((c) => {
-      const matchesTag =
-        selectedTag === 'All' ||
-        c.tags.some((tag) => tag.toLowerCase().includes(selectedTag.toLowerCase())) ||
-        (selectedTag === 'Robotics & Hardware' && (c.tags.includes('Robotics') || c.name.includes('Unitree') || c.name.includes('DJI') || c.name.includes('Xiaomi')));
-      
-      const localizedDesc = t.companiesPage.companyDescriptions?.[c.name] || c.desc;
-      const matchesSearch =
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        localizedDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.city.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    let isCancelled = false;
+    companyService
+      .getCompanies({
+        locale: lang as any,
+        search: searchQuery,
+        tag: selectedTag
+      })
+      .then((data) => {
+        if (!isCancelled) {
+          setCompanies(data);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [lang, searchQuery, selectedTag]);
 
-      return matchesTag && matchesSearch;
-    });
-  }, [selectedTag, searchQuery, t.companiesPage.companyDescriptions]);
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -78,91 +79,78 @@ export default function CompaniesPage() {
             </div>
 
             {/* Search Input */}
-            <div className="relative w-full md:w-80">
-              <input
-                type="text"
+            <div className="w-full md:w-80">
+              <SearchInput
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery('')}
                 placeholder={t.companiesPage.searchPlaceholder}
-                className="w-full rounded-box border border-ink/15 bg-surface-card px-4 py-2 text-sm text-brand-navy placeholder:text-ink-soft/60 focus:border-brand-navy focus:outline-none focus:ring-1 focus:ring-brand-navy shadow-sm"
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-ink-soft hover:text-brand-navy"
-                >
-                  ✕
-                </button>
-              )}
             </div>
           </div>
 
           <div className="mb-4 text-xs font-mono text-ink-soft">
-            {filteredCompanies.length} {t.companiesPage.resultsSuffix}
+            {companies.length} {t.companiesPage.resultsSuffix}
           </div>
 
-          {filteredCompanies.length === 0 ? (
+          {companies.length === 0 ? (
             <div className="text-center py-16 bg-surface-card rounded-box border border-ink/10 space-y-4">
               <p className="text-ink-soft">{t.companiesPage.noResults}</p>
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => { setSelectedTag('All'); setSearchQuery(''); }}
-                className="px-5 py-2 rounded-box bg-brand-navy text-white text-xs font-bold"
               >
                 {t.companiesPage.resetFilters}
-              </button>
+              </Button>
             </div>
           ) : (
             <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCompanies.map((c) => {
-                const desc = t.companiesPage.companyDescriptions?.[c.name] || c.desc;
-                return (
-                  <li
-                    key={c.name}
-                    className="flex h-full flex-col justify-between rounded-box border border-ink/10 bg-surface-card p-7 shadow-sm transition duration-200 hover:border-brand-navy/30 hover:shadow-md"
-                  >
-                    <div>
-                      <div className="flex min-h-[3.5rem] items-center justify-between gap-4">
-                        {c.logo ? (
-                          <div className="relative h-10 w-32 max-h-10">
-                            <Image
-                              src={c.logo}
-                              alt={c.name}
-                              width={120}
-                              height={40}
-                              className="h-10 w-auto max-w-[8rem] object-contain object-left"
-                            />
-                          </div>
-                        ) : (
-                          <span className="font-display font-bold text-lg text-brand-navy">{c.name}</span>
-                        )}
-                        <span className="text-right text-xs font-semibold uppercase tracking-wider text-brand-soft">
-                          {c.city}
-                        </span>
-                      </div>
-
-                      <h2 className="mt-6 font-display text-2xl font-bold uppercase text-brand-navy">
-                        {c.name}
-                      </h2>
-                      <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-                        {desc}
-                      </p>
+              {companies.map((c) => (
+                <li
+                  key={c.name}
+                  className="flex h-full flex-col justify-between rounded-box border border-ink/10 bg-surface-card p-7 shadow-sm transition duration-200 hover:border-brand-navy/30 hover:shadow-md"
+                >
+                  <div>
+                    <div className="flex min-h-[3.5rem] items-center justify-between gap-4">
+                      {c.logo ? (
+                        <div className="relative h-10 w-32 max-h-10">
+                          <Image
+                            src={c.logo}
+                            alt={c.name}
+                            width={120}
+                            height={40}
+                            className="h-10 w-auto max-w-[8rem] object-contain object-left"
+                          />
+                        </div>
+                      ) : (
+                        <span className="font-display font-bold text-lg text-brand-navy">{c.name}</span>
+                      )}
+                      <span className="text-right text-xs font-semibold uppercase tracking-wider text-brand-soft">
+                        {c.city}
+                      </span>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-ink/10 flex flex-wrap gap-2">
-                      {c.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-box bg-brand-navy/5 px-2.5 py-1 text-[11px] font-semibold text-brand-navy"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </li>
-                );
-              })}
+                    <h2 className="mt-6 font-display text-2xl font-bold uppercase text-brand-navy">
+                      {c.name}
+                    </h2>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+                      {c.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-ink/10 flex flex-wrap gap-2">
+                    {c.tags.map((tag) => (
+                      <Badge key={tag} variant="default" size="sm">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
+
         </div>
       </section>
 

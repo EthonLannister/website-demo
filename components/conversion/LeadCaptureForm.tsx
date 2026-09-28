@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useTourMode } from '@/components/providers/TourModeProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/constants';
+
 
 export function LeadCaptureForm() {
   const { mode } = useTourMode();
@@ -82,15 +84,16 @@ export function LeadCaptureForm() {
                   {t.leadForm.concierge}
                 </p>
                 <div className="flex flex-col gap-1.5 text-xs sm:text-sm text-taste-ink/80 pt-1">
-                  <a href="mailto:ethon210@gmail.com" className="flex items-center gap-2 hover:text-taste-coral transition">
+                  <a href={`mailto:${SITE_CONFIG.contact.email}`} className="flex items-center gap-2 hover:text-taste-coral transition">
                     <Mail className="w-3.5 h-3.5 text-taste-coral" />
-                    <span>ethon210@gmail.com</span>
+                    <span>{SITE_CONFIG.contact.email}</span>
                   </a>
-                  <a href="tel:+8613605291386" className="flex items-center gap-2 hover:text-taste-coral transition">
+                  <a href={`tel:${SITE_CONFIG.contact.phone.replace(/\s+/g, '')}`} className="flex items-center gap-2 hover:text-taste-coral transition">
                     <Phone className="w-3.5 h-3.5 text-taste-coral" />
-                    <span>+86 136 0529 1386 (Direct / WhatsApp)</span>
+                    <span>{SITE_CONFIG.contact.phone} (Direct / WhatsApp)</span>
                   </a>
                 </div>
+
               </div>
 
               {/* Office Locations */}

@@ -1,11 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { industryService } from '@/lib/services';
+import { IndustryItem } from '@/lib/types';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export default function IndustriesPage() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const [industries, setIndustries] = useState<IndustryItem[]>(t.industriesPage.items || []);
+
+  useEffect(() => {
+    let isCancelled = false;
+    industryService.getIndustries({ locale: lang as any }).then((data) => {
+      if (!isCancelled) {
+        setIndustries(data);
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [lang]);
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -28,7 +44,8 @@ export default function IndustriesPage() {
       <section className="bg-surface-cream px-4 py-[var(--section-y)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-x-12 gap-y-12 lg:grid-cols-2">
-            {(t.industriesPage.items || []).map((ind) => (
+            {industries.map((ind) => (
+
               <article key={ind.id || ind.title} className="border-t border-ink/15 pt-8 flex flex-col justify-between">
                 <div>
                   <h2 className="font-display text-3xl font-bold uppercase text-brand-navy">

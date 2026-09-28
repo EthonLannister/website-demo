@@ -1,11 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { destinationService } from '@/lib/services';
+import { DestinationHub } from '@/lib/types';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export default function DestinationsPage() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const [destinations, setDestinations] = useState<DestinationHub[]>(t.destinationsPage.items || []);
+
+  useEffect(() => {
+    let isCancelled = false;
+    destinationService.getDestinations({ locale: lang as any }).then((data) => {
+      if (!isCancelled) {
+        setDestinations(data);
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [lang]);
+
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -28,9 +45,10 @@ export default function DestinationsPage() {
       <section className="bg-surface-cream px-4 py-[var(--section-y)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {(t.destinationsPage.items || []).map((city, idx) => {
+            {destinations.map((city, idx) => {
               // The top hubs (Beijing, Shanghai, Hangzhou, Shenzhen) in dark theme, rest in cream
               const isDark = idx < 4;
+
               return (
                 <article
                   key={city.id || city.name}

@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { SITE_CONFIG } from '@/lib/constants';
+
 
 export function SiteFooter() {
   const { t } = useLanguage();
@@ -117,13 +119,13 @@ export function SiteFooter() {
             </span>
             <ul className="space-y-2 text-sm text-white/75">
               <li>
-                <a href="mailto:ethon210@gmail.com" className="hover:text-white transition">
-                  ethon210@gmail.com
+                <a href={`mailto:${SITE_CONFIG.contact.email}`} className="hover:text-white transition">
+                  {SITE_CONFIG.contact.email}
                 </a>
               </li>
               <li>
-                <a href="tel:+8613605291386" className="hover:text-white transition">
-                  +86 136 0529 1386
+                <a href={`tel:${SITE_CONFIG.contact.phone.replace(/\s+/g, '')}`} className="hover:text-white transition">
+                  {SITE_CONFIG.contact.phone}
                 </a>
               </li>
               <li className="text-xs text-white/50 pt-1">
@@ -131,6 +133,7 @@ export function SiteFooter() {
               </li>
             </ul>
           </div>
+
         </div>
 
         {/* Bottom Bar */}
